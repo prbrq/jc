@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Check if exactly 2 arguments are provided
+if [ $# -ne 2 ]; then
+    echo "Error: Please provide exactly 2 JSON files." >&2
+    echo "Usage: $0 <file1> <file2>" >&2
+    exit 1
+fi
+
+# Validate file existence and JSON syntax
+for file in "$1" "$2"; do
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        echo "Error: '$file' does not exist or is not a regular file." >&2
+        exit 1
+    fi
+
+    # Validate JSON syntax using jq
+    if ! jq empty "$file" >/dev/null 2>&1; then
+        echo "Error: '$file' is not valid JSON." >&2
+        exit 1
+    fi
+done
+
+jq '
+  def normalize:
+    if type == "object" then
+      to_entries | sort_by(.key) | from_entries
+    elif type == "array" then
+      map(normalize) | sort
+    else
+      .
+    end;
+  normalize
+' $1 > ~/.jc/f.json
+
+jq '
+  def normalize:
+    if type == "object" then
+      to_entries | sort_by(.key) | from_entries
+    elif type == "array" then
+      map(normalize) | sort
+    else
+      .
+    end;
+  normalize
+' $2 > ~/.jc/s.json
+
+difft ~/.jc/f.json ~/.jc/s.json
