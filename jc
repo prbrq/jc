@@ -23,27 +23,27 @@ for file in "$1" "$2"; do
 done
 
 jq '
-  def normalize:
+  def norm:
     if type == "object" then
-      to_entries | sort_by(.key) | from_entries
+      to_entries | sort_by(.key) | map(.value |= norm) | from_entries
     elif type == "array" then
-      map(normalize) | sort
+      map(norm) | sort
     else
       .
     end;
-  normalize
+  norm
 ' $1 > ~/.jc/f.json
 
 jq '
-  def normalize:
+  def norm:
     if type == "object" then
-      to_entries | sort_by(.key) | from_entries
+      to_entries | sort_by(.key) | map(.value |= norm) | from_entries
     elif type == "array" then
-      map(normalize) | sort
+      map(norm) | sort
     else
       .
     end;
-  normalize
+  norm
 ' $2 > ~/.jc/s.json
 
 difft ~/.jc/f.json ~/.jc/s.json
